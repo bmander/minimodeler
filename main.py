@@ -26,10 +26,12 @@ class App:
         self.front.bind("<ButtonRelease-1>", self.on_buttonrelease)
 
         self.top.bind("<B1-Motion>", self.on_top_move)
+        self.top.bind("<Shift-Button-1>", self.on_top_shift_click)
         self.top.bind("<Button-1>", self.on_click)
         self.top.bind("<ButtonRelease-1>", self.on_buttonrelease)
 
         self.right.bind("<B1-Motion>", self.on_right_move)
+        self.right.bind("<Shift-Button-1>", self.on_right_shift_click)
         self.right.bind("<Button-1>", self.on_click)
         self.right.bind("<ButtonRelease-1>", self.on_buttonrelease)
 
@@ -44,6 +46,19 @@ class App:
         self.front.coords( pt.ids[self.front], pt.x-2.5, pt.y-2.5, pt.x+2.5, pt.y+2.5 )
         self.top.coords( pt.ids[self.top], pt.x-2.5, pt.z-2.5, pt.x+2.5, pt.z+2.5 )
         self.right.coords( pt.ids[self.right], pt.z-2.5,pt.y-2.5,pt.z+2.5,pt.y+2.5 )
+
+    def add_new_point(self,pt):
+        frontid = self.front.create_rectangle(pt.x-2.5,pt.y-2.5,pt.x+2.5,pt.y+2.5)
+        topid = self.top.create_rectangle(pt.x-2.5,pt.z-2.5,pt.x+2.5,pt.z+2.5)
+        rightid = self.right.create_rectangle(pt.z-2.5,pt.y-2.5,pt.z+2.5,pt.y+2.5)
+
+        pt.ids[self.front] = frontid
+        pt.ids[self.top] = topid
+        pt.ids[self.right] = rightid
+
+        self.front_pts[frontid] = pt
+        self.top_pts[topid] = pt
+        self.right_pts[rightid] = pt
 
     def on_front_move(self, event):
         for id in self.selected_ids:
@@ -76,17 +91,19 @@ class App:
         pt = Point(event.x,event.y,0)
         self.points.append( pt )
 
-        frontid = self.front.create_rectangle(pt.x-2.5,pt.y-2.5,pt.x+2.5,pt.y+2.5)
-        topid = self.top.create_rectangle(pt.x-2.5,pt.z-2.5,pt.x+2.5,pt.z+2.5)
-        rightid = self.right.create_rectangle(pt.z-2.5,pt.y-2.5,pt.z+2.5,pt.y+2.5)
+        self.add_new_point(pt)
 
-        pt.ids[self.front] = frontid
-        pt.ids[self.top] = topid
-        pt.ids[self.right] = rightid
+    def on_top_shift_click(self,event):
+        pt = Point(event.x,0,event.y)
+        self.points.append( pt )
 
-        self.front_pts[frontid] = pt
-        self.top_pts[topid] = pt
-        self.right_pts[rightid] = pt
+        self.add_new_point(pt)
+
+    def on_right_shift_click(self,event):
+        pt = Point(0,event.y,event.x)
+        self.points.append( pt )
+
+        self.add_new_point(pt)
 
     def on_buttonrelease(self,event):
         self.selected_points = []
