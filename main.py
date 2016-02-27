@@ -1,28 +1,46 @@
 from Tkinter import *
+import numpy as np
 
 class Point:
     def __init__(self,x,y,z):
-        self.x = x
-        self.y = y
-        self.z = z
+        self.s = [x,y,z]
         self.ids = {}
+
+    @property
+    def x(self):
+        return self.s[0]
+
+    @property
+    def y(self):
+        return self.s[1]
+
+    @property
+    def z(self):
+        return self.s[2]
 
 class Viewport(Canvas):
     def __init__(self, *args, **kwargs):
         self.pts = {}
         Canvas.__init__(self,*args,**kwargs)
 
+    def set_dim_map(self,x,y):
+        self.x_dim = x
+        self.y_dim = y
+
 class App:
     def __init__(self,master):
         self.master = master
 
         self.front = Viewport(master, width=300, height=300, highlightbackground="black",highlightthickness=1)
+        self.front.set_dim_map(0,1) # x maps to the 0th dimension, y maps to the 1st dimension
         self.front.place(x=5,y=310)
 
         self.top = Viewport(master, width=300, height=300, highlightbackground="black",highlightthickness=1)
+        self.top.set_dim_map(0,2) # x maps to the 0th dimension, y maps to the 2nd dimension
         self.top.place(x=5,y=5)
 
         self.right = Viewport(master, width=300, height=300, highlightbackground="black",highlightthickness=1)
+        self.right.set_dim_map(2,1) # x maps to the 2nd dimension, y maps to the 2nd dimension
         self.right.place(x=310,y=310)
 
         self.front.bind("<B1-Motion>", self.on_front_move)
@@ -65,24 +83,24 @@ class App:
     def on_front_move(self, event):
         for id in self.selected_ids:
             pt = event.widget.pts[id]
-            pt.x = event.x
-            pt.y = event.y
+            pt.s[ event.widget.x_dim ] = event.x
+            pt.s[ event.widget.y_dim ] = event.y
 
             self.update_point_position(pt)
 
     def on_top_move(self, event):
         for id in self.selected_ids:
             pt = event.widget.pts[id]
-            pt.x = event.x
-            pt.z = event.y
+            pt.s[ event.widget.x_dim ] = event.x
+            pt.s[ event.widget.y_dim ] = event.y
 
             self.update_point_position(pt)
 
     def on_right_move(self, event):
         for id in self.selected_ids:
-            pt = self.top_pts[id]
-            pt.z = event.x
-            pt.y = event.y
+            pt = event.widget.pts[id]
+            pt.s[ event.widget.x_dim ] = event.x
+            pt.s[ event.widget.y_dim ] = event.y
 
             self.update_point_position(pt)
 
