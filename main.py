@@ -45,6 +45,9 @@ class Viewport(Canvas):
 
         return id
 
+    def reverse_proj(self,x,y):
+        return np.dot( self.proj.T, np.array([x,y]) )
+
 class App:
     def __init__(self,master):
         self.master = master
@@ -109,9 +112,8 @@ class App:
         self.selected_ids = event.widget.find_overlapping(event.x-2,event.y-2,event.x+2,event.y+2)
 
     def on_shift_click(self,event):
-        pt = [0,0,0]
-        pt[ event.widget.x_dim ] = event.x
-        pt[ event.widget.y_dim ] = event.y
+        pt = event.widget.reverse_proj(event.x,event.y)
+
         pt = Point(*pt)
         self.points.append( pt )
 
