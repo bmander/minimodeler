@@ -7,17 +7,22 @@ class Point:
         self.z = z
         self.ids = {}
 
+class Viewport(Canvas):
+    def __init__(self, *args, **kwargs):
+        self.pts = {}
+        Canvas.__init__(self,*args,**kwargs)
+
 class App:
     def __init__(self,master):
         self.master = master
 
-        self.front = Canvas(master, width=300, height=300, highlightbackground="black",highlightthickness=1)
+        self.front = Viewport(master, width=300, height=300, highlightbackground="black",highlightthickness=1)
         self.front.place(x=5,y=310)
 
-        self.top = Canvas(master, width=300, height=300, highlightbackground="black",highlightthickness=1)
+        self.top = Viewport(master, width=300, height=300, highlightbackground="black",highlightthickness=1)
         self.top.place(x=5,y=5)
 
-        self.right = Canvas(master, width=300, height=300, highlightbackground="black",highlightthickness=1)
+        self.right = Viewport(master, width=300, height=300, highlightbackground="black",highlightthickness=1)
         self.right.place(x=310,y=310)
 
         self.front.bind("<B1-Motion>", self.on_front_move)
@@ -38,9 +43,6 @@ class App:
         self.selected_ids = []
 
         self.points = []
-        self.front_pts = {}
-        self.top_pts = {}
-        self.right_pts = {}
 
     def update_point_position(self,pt):
         self.front.coords( pt.ids[self.front], pt.x-2.5, pt.y-2.5, pt.x+2.5, pt.y+2.5 )
@@ -56,13 +58,13 @@ class App:
         pt.ids[self.top] = topid
         pt.ids[self.right] = rightid
 
-        self.front_pts[frontid] = pt
-        self.top_pts[topid] = pt
-        self.right_pts[rightid] = pt
+        self.front.pts[frontid] = pt
+        self.top.pts[topid] = pt
+        self.right.pts[rightid] = pt
 
     def on_front_move(self, event):
         for id in self.selected_ids:
-            pt = self.front_pts[id]
+            pt = event.widget.pts[id]
             pt.x = event.x
             pt.y = event.y
 
@@ -70,7 +72,7 @@ class App:
 
     def on_top_move(self, event):
         for id in self.selected_ids:
-            pt = self.top_pts[id]
+            pt = event.widget.pts[id]
             pt.x = event.x
             pt.z = event.y
 
