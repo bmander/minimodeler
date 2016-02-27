@@ -22,15 +22,15 @@ class App:
 
         self.front.bind("<B1-Motion>", self.on_front_move)
         self.front.bind("<Shift-Button-1>", self.on_front_shift_click)
-        self.front.bind("<Button-1>", self.on_front_click)
+        self.front.bind("<Button-1>", self.on_click)
         self.front.bind("<ButtonRelease-1>", self.on_buttonrelease)
 
         self.top.bind("<B1-Motion>", self.on_top_move)
-        self.top.bind("<Button-1>", self.on_top_click)
+        self.top.bind("<Button-1>", self.on_click)
         self.top.bind("<ButtonRelease-1>", self.on_buttonrelease)
 
         self.right.bind("<B1-Motion>", self.on_right_move)
-        self.right.bind("<Button-1>", self.on_right_click)
+        self.right.bind("<Button-1>", self.on_click)
         self.right.bind("<ButtonRelease-1>", self.on_buttonrelease)
 
         self.selected_ids = []
@@ -69,14 +69,8 @@ class App:
 
             self.update_point_position(pt)
 
-    def on_front_click(self,event):
-        self.selected_ids = self.front.find_overlapping(event.x-2,event.y-2,event.x+2,event.y+2)
-
-    def on_top_click(self,event):
-        self.selected_ids = self.top.find_overlapping(event.x-2,event.y-2,event.x+2,event.y+2)
-
-    def on_right_click(self,event):
-        self.selected_ids = self.right.find_overlapping(event.x-2,event.y-2,event.x+2,event.y+2)
+    def on_click(self,event):
+        self.selected_ids = event.widget.find_overlapping(event.x-2,event.y-2,event.x+2,event.y+2)
 
     def on_front_shift_click(self,event):
         pt = Point(event.x,event.y,0)
