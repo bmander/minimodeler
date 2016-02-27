@@ -36,6 +36,15 @@ class Viewport(Canvas):
 
         self.coords( id, projpt[0]-2.5, projpt[1]-2.5, projpt[0]+2.5, projpt[1]+2.5 )
 
+    def add_point(self,pt):
+        projpt = np.dot(self.proj,np.array(pt.s))
+
+        id = self.create_rectangle( projpt[0]-2.5, projpt[1]-2.5, projpt[0]+2.5, projpt[1]+2.5 )
+
+        self.pts[id] = pt
+
+        return id
+
 class App:
     def __init__(self,master):
         self.master = master
@@ -80,17 +89,13 @@ class App:
         self.right.update_point( pt.ids[self.right] )
 
     def add_new_point(self,pt):
-        frontid = self.front.create_rectangle(pt.x-2.5,pt.y-2.5,pt.x+2.5,pt.y+2.5)
-        topid = self.top.create_rectangle(pt.x-2.5,pt.z-2.5,pt.x+2.5,pt.z+2.5)
-        rightid = self.right.create_rectangle(pt.z-2.5,pt.y-2.5,pt.z+2.5,pt.y+2.5)
+        frontid = self.front.add_point(pt)
+        topid = self.top.add_point(pt)
+        rightid = self.right.add_point(pt)
 
         pt.ids[self.front] = frontid
         pt.ids[self.top] = topid
         pt.ids[self.right] = rightid
-
-        self.front.pts[frontid] = pt
-        self.top.pts[topid] = pt
-        self.right.pts[rightid] = pt
 
     def on_move(self, event):
         for id in self.selected_ids:
