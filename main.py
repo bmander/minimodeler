@@ -20,7 +20,7 @@ class App:
         self.right = Canvas(master, width=300, height=300, highlightbackground="black",highlightthickness=1)
         self.right.place(x=310,y=310)
 
-        self.front.bind("<B1-Motion>", self.on_move)
+        self.front.bind("<B1-Motion>", self.on_front_move)
 
         self.front.bind("<ButtonRelease-1>", self.on_buttonrelease)
         self.front.bind("<Shift-Button-1>", self.on_front_shift_click)
@@ -33,27 +33,20 @@ class App:
         self.top_pts = {}
         self.right_pts = {}
 
-    def set_selected_pt_coords(self,x=None,y=None,z=None):
-        for id in self.selected_ids:
-            # pt = self.points[int(tag)]
-            # pt[0] = pt[0] or x
-            # pt[1] = pt[1] or y
-            # pt[2] = pt[2] or z
+    def update_point_position(self,pt):
+        self.front.coords( pt.ids[self.front], pt.x-2.5, pt.y-2.5, pt.x+2.5, pt.y+2.5 )
+        self.top.coords( pt.ids[self.top], pt.x-2.5, pt.z-2.5, pt.x+2.5, pt.z+2.5 )
 
-            self.front.coords(id, x-2.5,y-2.5,x+2.5,y+2.5)
-
-    def on_move(self, event):
+    def on_front_move(self, event):
         for id in self.selected_ids:
             pt = self.front_pts[id]
             pt.x = event.x
-            pt.x = event.y
+            pt.y = event.y
 
-        self.set_selected_pt_coords(event.x,event.y)
+            self.update_point_position(pt)
 
     def on_front_click(self,event):
-        ids = [x for x in self.front.find_overlapping(event.x-2,event.y-2,event.x+2,event.y+2)]
-
-        self.selected_ids = ids
+        self.selected_ids = self.front.find_overlapping(event.x-2,event.y-2,event.x+2,event.y+2)
 
     def on_front_shift_click(self,event):
         ix = len(self.points)
