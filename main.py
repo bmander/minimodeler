@@ -36,6 +36,7 @@ class App:
     def update_point_position(self,pt):
         self.front.coords( pt.ids[self.front], pt.x-2.5, pt.y-2.5, pt.x+2.5, pt.y+2.5 )
         self.top.coords( pt.ids[self.top], pt.x-2.5, pt.z-2.5, pt.x+2.5, pt.z+2.5 )
+        self.right.coords( pt.ids[self.right], pt.z-2.5,pt.y-2.5,pt.z+2.5,pt.y+2.5 )
 
     def on_front_move(self, event):
         for id in self.selected_ids:
@@ -49,18 +50,20 @@ class App:
         self.selected_ids = self.front.find_overlapping(event.x-2,event.y-2,event.x+2,event.y+2)
 
     def on_front_shift_click(self,event):
-        ix = len(self.points)
         pt = Point(event.x,event.y,0)
         self.points.append( pt )
 
         frontid = self.front.create_rectangle(pt.x-2.5,pt.y-2.5,pt.x+2.5,pt.y+2.5)
         topid = self.top.create_rectangle(pt.x-2.5,pt.z-2.5,pt.x+2.5,pt.z+2.5)
+        rightid = self.right.create_rectangle(pt.z-2.5,pt.y-2.5,pt.z+2.5,pt.y+2.5)
 
         pt.ids[self.front] = frontid
         pt.ids[self.top] = topid
+        pt.ids[self.right] = rightid
 
         self.front_pts[frontid] = pt
         self.top_pts[topid] = pt
+        self.right_pts[rightid] = pt
 
     def on_buttonrelease(self,event):
         self.selected_points = []
