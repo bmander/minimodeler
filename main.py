@@ -34,6 +34,8 @@ def make_rotation_matrix(theta_x,theta_y,theta_z):
 class Viewport(Canvas):
     def __init__(self, *args, **kwargs):
         self.pts = {}
+        self.width = kwargs['width']
+        self.height = kwargs['height']
         Canvas.__init__(self,*args,**kwargs)
 
     def set_euler_angles(self,theta_x,theta_y,theta_z):
@@ -54,7 +56,7 @@ class Viewport(Canvas):
         pt = self.pts[id]
         x,y,z = self.proj(pt)
 
-        x,y = self.to_cartesian(x,y)
+        x,y = self.to_viewport(x,y)
         self.coords( id, x-2.5, y-2.5, x+2.5, y+2.5 )
 
     def update_all_points(self):
@@ -64,7 +66,7 @@ class Viewport(Canvas):
     def add_point(self,pt):
         x,y,z = self.proj(pt)
 
-        x,y = self.to_cartesian(x,y)
+        x,y = self.to_viewport(x,y)
         id = self.create_rectangle( x-2.5, y-2.5, x+2.5, y+2.5 )
 
         self.pts[id] = pt
@@ -76,12 +78,17 @@ class Viewport(Canvas):
         return np.dot(self.rot_matrix,pt.s)
 
     def reverse_proj(self,x,y,z=0):
-        # convert 2d screen coordinates into 3d coordinate, with z coordinate set to zero
+        # convert 3d screen-oriented coordinates into world coordinates
         s = np.array([x,y,z])
         return np.dot( self.rev_rot_matrix, s )
 
-    def to_cartesian(self,x,y):
-        return x, self.winfo_reqheight()-y;
+    def to_viewport(self,x,y):
+        # convert from screen-oriented 3d points to viewport coordinates
+        return x, self.height-y;
+
+    def from_viewport(self,x,y):
+        # convert viewport coordinates to screen-oriented x and y coords
+        return x, self.height-y;
 
 class App:
     def __init__(self,master):
@@ -166,7 +173,7 @@ class App:
 
         px,py,pz = event.widget.proj(pt) #we need the screen-oriented depth coord 'pz'
 
-        x,y = event.widget.to_cartesian(event.x,event.y)
+        x,y = event.widget.from_viewport(event.x,event.y)
 
         pt.s = event.widget.reverse_proj( x, y, pz )
 
@@ -176,8 +183,10 @@ class App:
         self.selected_id = event.widget.find_overlapping(event.x-2,event.y-2,event.x+2,event.y+2)[0]
 
     def on_shift_click(self,event):
-        x,y = event.widget.to_cartesian(event.x,event.y)
+        x,y = event.widget.from_viewport(event.x,event.y)
         pt = event.widget.reverse_proj(x,y)
+
+        print pt
 
         pt = Point(*pt)
         self.points.append( pt )
