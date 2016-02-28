@@ -27,17 +27,20 @@ class Viewport(Canvas):
         self.x_dim = x
         self.y_dim = y
 
-    def set_proj(self,A):
-        self.proj = A
+    def set_proj_matrix(self,A):
+        self.proj_matrix = A
+
+    def set_euler_angles(self,theta_x,theta_y,theta_z):
+        self.theta = np.array([theta_x,theta_y,theta_z])
 
     def update_point(self,id):
         pt = self.pts[id]
-        projpt = np.dot(self.proj,np.array(pt.s))
+        projpt = self.proj(pt)
 
         self.coords( id, projpt[0]-2.5, projpt[1]-2.5, projpt[0]+2.5, projpt[1]+2.5 )
 
     def add_point(self,pt):
-        projpt = np.dot(self.proj,np.array(pt.s))
+        projpt = self.proj(pt)
 
         id = self.create_rectangle( projpt[0]-2.5, projpt[1]-2.5, projpt[0]+2.5, projpt[1]+2.5 )
 
@@ -45,8 +48,13 @@ class Viewport(Canvas):
 
         return id
 
+    def proj(self,pt):
+        # convert world-space 3d coordinates to screen 2d coordinates
+        return np.dot(self.proj_matrix,np.array(pt.s))
+
     def reverse_proj(self,x,y):
-        return np.dot( self.proj.T, np.array([x,y]) )
+        # convert 2d screen coordinates into 3d coordinate, with z coordinate set to zero
+        return np.dot( self.proj_matrix.T, np.array([x,y]) )
 
 class App:
     def __init__(self,master):
@@ -54,17 +62,20 @@ class App:
 
         self.front = Viewport(master, width=300, height=300, highlightbackground="black",highlightthickness=1)
         self.front.set_dim_map(0,1) # x maps to the 0th dimension, y maps to the 1st dimension
-        self.front.set_proj( np.array([[1,0,0],[0,1,0]]) )
+        self.front.set_proj_matrix( np.array([[1,0,0],[0,1,0]]) )
+        self.front.set_euler_angles( 0,0,0 )
         self.front.place(x=5,y=310)
 
         self.top = Viewport(master, width=300, height=300, highlightbackground="black",highlightthickness=1)
         self.top.set_dim_map(0,2) # x maps to the 0th dimension, y maps to the 2nd dimension
-        self.top.set_proj( np.array([[1,0,0],[0,0,1]]) )
+        self.top.set_proj_matrix( np.array([[1,0,0],[0,0,1]]) )
+        self.top.set_euler_angles( np.pi/2,0,0 )
         self.top.place(x=5,y=5)
 
         self.right = Viewport(master, width=300, height=300, highlightbackground="black",highlightthickness=1)
         self.right.set_dim_map(2,1) # x maps to the 2nd dimension, y maps to the 2nd dimension
-        self.right.set_proj( np.array([[0,0,1],[0,1,0]]) )
+        self.right.set_proj_matrix( np.array([[0,0,1],[0,1,0]]) )
+        self.right.set_euler_angles( 0,-np.pi/2,0 )
         self.right.place(x=310,y=310)
 
         self.front.bind("<B1-Motion>", self.on_move)
