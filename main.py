@@ -18,6 +18,19 @@ class Point:
     def z(self):
         return self.s[2]
 
+def make_rotation_matrix(theta_x,theta_y,theta_z):
+    A_x = np.array([[1,0,0],
+                    [0,np.cos(theta_x),-np.sin(theta_x)],
+                    [0,np.sin(theta_x),np.cos(theta_x)]])
+    A_y = np.array([[np.cos(theta_y),0,np.sin(theta_y)],
+                    [0,1,0],
+                    [-np.sin(theta_y),0,np.cos(theta_y)]])
+    A_z = np.array([[np.cos(theta_z),-np.sin(theta_z),0],
+                    [np.sin(theta_z),np.cos(theta_z),0],
+                    [0,0,1]])
+
+    return np.dot( np.dot(A_x,A_y), A_z )
+
 class Viewport(Canvas):
     def __init__(self, *args, **kwargs):
         self.pts = {}
@@ -32,17 +45,9 @@ class Viewport(Canvas):
 
     def set_euler_angles(self,theta_x,theta_y,theta_z):
         self.theta = np.array([theta_x,theta_y,theta_z])
-        A_x = np.array([[1,0,0],
-                        [0,np.cos(theta_x),-np.sin(theta_x)],
-                        [0,np.sin(theta_x),np.cos(theta_x)]])
-        A_y = np.array([[np.cos(theta_y),0,np.sin(theta_y)],
-                        [0,1,0],
-                        [-np.sin(theta_y),0,np.cos(theta_y)]])
-        A_z = np.array([[np.cos(theta_z),-np.sin(theta_z),0],
-                        [np.sin(theta_z),np.cos(theta_z),0],
-                        [0,0,1]])
 
-        self.rot_matrix = np.dot( np.dot(A_x,A_y), A_z )
+        self.rot_matrix = make_rotation_matrix(theta_x,theta_y,theta_z)
+        self.rev_rot_matrix = make_rotation_matrix(-theta_x,-theta_y,-theta_z)
 
     def update_point(self,id):
         pt = self.pts[id]
@@ -67,7 +72,8 @@ class Viewport(Canvas):
 
     def reverse_proj(self,x,y):
         # convert 2d screen coordinates into 3d coordinate, with z coordinate set to zero
-        return np.dot( self.proj_matrix.T, np.array([x,y]) )
+        s = np.array([x,y,0])
+        return np.dot( self.rev_rot_matrix, s )
 
 class App:
     def __init__(self,master):
