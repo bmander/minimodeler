@@ -32,6 +32,17 @@ class Viewport(Canvas):
 
     def set_euler_angles(self,theta_x,theta_y,theta_z):
         self.theta = np.array([theta_x,theta_y,theta_z])
+        A_x = np.array([[1,0,0],
+                        [0,np.cos(theta_x),-np.sin(theta_x)],
+                        [0,np.sin(theta_x),np.cos(theta_x)]])
+        A_y = np.array([[np.cos(theta_y),0,np.sin(theta_y)],
+                        [0,1,0],
+                        [-np.sin(theta_y),0,np.cos(theta_y)]])
+        A_z = np.array([[np.cos(theta_z),-np.sin(theta_z),0],
+                        [np.sin(theta_z),np.cos(theta_z),0],
+                        [0,0,1]])
+
+        self.rot_matrix = np.dot( np.dot(A_x,A_y), A_z )
 
     def update_point(self,id):
         pt = self.pts[id]
@@ -50,7 +61,9 @@ class Viewport(Canvas):
 
     def proj(self,pt):
         # convert world-space 3d coordinates to screen 2d coordinates
-        return np.dot(self.proj_matrix,np.array(pt.s))
+        rotated_point = np.dot(self.rot_matrix,pt.s)
+
+        return rotated_point[[0,1]]
 
     def reverse_proj(self,x,y):
         # convert 2d screen coordinates into 3d coordinate, with z coordinate set to zero
@@ -69,13 +82,13 @@ class App:
         self.top = Viewport(master, width=300, height=300, highlightbackground="black",highlightthickness=1)
         self.top.set_dim_map(0,2) # x maps to the 0th dimension, y maps to the 2nd dimension
         self.top.set_proj_matrix( np.array([[1,0,0],[0,0,1]]) )
-        self.top.set_euler_angles( np.pi/2,0,0 )
+        self.top.set_euler_angles( -np.pi/2,0,0 )
         self.top.place(x=5,y=5)
 
         self.right = Viewport(master, width=300, height=300, highlightbackground="black",highlightthickness=1)
         self.right.set_dim_map(2,1) # x maps to the 2nd dimension, y maps to the 2nd dimension
         self.right.set_proj_matrix( np.array([[0,0,1],[0,1,0]]) )
-        self.right.set_euler_angles( 0,-np.pi/2,0 )
+        self.right.set_euler_angles( 0,np.pi/2,0 )
         self.right.place(x=310,y=310)
 
         self.front.bind("<B1-Motion>", self.on_move)
