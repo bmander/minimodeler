@@ -48,24 +48,22 @@ class Viewport(Canvas):
 
     def update_point(self,id):
         pt = self.pts[id]
-        projpt = self.proj(pt)
+        x,y,z = self.proj(pt)
 
-        self.coords( id, projpt[0]-2.5, projpt[1]-2.5, projpt[0]+2.5, projpt[1]+2.5 )
+        self.coords( id, x-2.5, y-2.5, x+2.5, y+2.5 )
 
     def add_point(self,pt):
-        projpt = self.proj(pt)
+        x,y,z = self.proj(pt)
 
-        id = self.create_rectangle( projpt[0]-2.5, projpt[1]-2.5, projpt[0]+2.5, projpt[1]+2.5 )
+        id = self.create_rectangle( x-2.5, y-2.5, x+2.5, y+2.5 )
 
         self.pts[id] = pt
 
         return id
 
     def proj(self,pt):
-        # convert world-space 3d coordinates to screen 2d coordinates
-        rotated_point = np.dot(self.rot_matrix,pt.s)
-
-        return rotated_point[[0,1]]
+        # convert world-space 3d coordinates to 3d point oriented to screen
+        return np.dot(self.rot_matrix,pt.s)
 
     def reverse_proj(self,x,y):
         # convert 2d screen coordinates into 3d coordinate, with z coordinate set to zero
@@ -127,6 +125,9 @@ class App:
     def on_move(self, event):
         for id in self.selected_ids:
             pt = event.widget.pts[id]
+
+
+
             pt.s[ event.widget.x_dim ] = event.x
             pt.s[ event.widget.y_dim ] = event.y
 
