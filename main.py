@@ -36,12 +36,22 @@ class Viewport(Canvas):
         self.pts = {}
         self.width = kwargs['width']
         self.height = kwargs['height']
+
+        self.f = kwargs.get("f")
+        if 'f' in kwargs:
+            del kwargs['f']
+
+        self.camera_pos = np.array([0,0,0])
+
         Canvas.__init__(self,*args,**kwargs)
 
     def set_euler_angles(self,theta_x,theta_y,theta_z):
         self.theta = np.array([theta_x,theta_y,theta_z], dtype=np.float32)
 
         self._update_rot_matrices()
+
+    def set_camera_position(self,x,y,z):
+        self.camera_pos = np.array([x,y,z])
 
     def rotate(self,theta_x,theta_y,theta_z):
         self.theta += [theta_x,theta_y,theta_z]
@@ -106,7 +116,7 @@ class App:
         self.right.set_euler_angles( 0,np.pi/2,0 )
         self.right.place(x=310,y=310)
 
-        self.pers = Viewport(master, width=300, height=300, highlightbackground="black",highlightthickness=1)
+        self.pers = Viewport(master, width=300, height=300, highlightbackground="black",highlightthickness=1,f=1.0)
         self.pers.set_euler_angles( 0,0,0 )
         self.pers.place(x=310,y=5)
 
