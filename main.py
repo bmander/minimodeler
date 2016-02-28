@@ -40,9 +40,6 @@ class Viewport(Canvas):
         self.x_dim = x
         self.y_dim = y
 
-    def set_proj_matrix(self,A):
-        self.proj_matrix = A
-
     def set_euler_angles(self,theta_x,theta_y,theta_z):
         self.theta = np.array([theta_x,theta_y,theta_z])
 
@@ -81,19 +78,16 @@ class App:
 
         self.front = Viewport(master, width=300, height=300, highlightbackground="black",highlightthickness=1)
         self.front.set_dim_map(0,1) # x maps to the 0th dimension, y maps to the 1st dimension
-        self.front.set_proj_matrix( np.array([[1,0,0],[0,1,0]]) )
         self.front.set_euler_angles( 0,0,0 )
         self.front.place(x=5,y=310)
 
         self.top = Viewport(master, width=300, height=300, highlightbackground="black",highlightthickness=1)
         self.top.set_dim_map(0,2) # x maps to the 0th dimension, y maps to the 2nd dimension
-        self.top.set_proj_matrix( np.array([[1,0,0],[0,0,1]]) )
         self.top.set_euler_angles( -np.pi/2,0,0 )
         self.top.place(x=5,y=5)
 
         self.right = Viewport(master, width=300, height=300, highlightbackground="black",highlightthickness=1)
         self.right.set_dim_map(2,1) # x maps to the 2nd dimension, y maps to the 2nd dimension
-        self.right.set_proj_matrix( np.array([[0,0,1],[0,1,0]]) )
         self.right.set_euler_angles( 0,np.pi/2,0 )
         self.right.place(x=310,y=310)
 
