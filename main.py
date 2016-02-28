@@ -66,7 +66,7 @@ class Viewport(Canvas):
         pt = self.pts[id]
         x,y,z = self.proj(pt)
 
-        x,y = self.to_viewport(x,y)
+        x,y = self.to_viewport(x,y,z)
         self.coords( id, x-2.5, y-2.5, x+2.5, y+2.5 )
 
     def update_all_points(self):
@@ -76,7 +76,7 @@ class Viewport(Canvas):
     def add_point(self,pt):
         x,y,z = self.proj(pt)
 
-        x,y = self.to_viewport(x,y)
+        x,y = self.to_viewport(x,y,z)
         id = self.create_rectangle( x-2.5, y-2.5, x+2.5, y+2.5 )
 
         self.pts[id] = pt
@@ -84,19 +84,34 @@ class Viewport(Canvas):
         return id
 
     def proj(self,pt):
-        # convert world-space 3d coordinates to 3d point oriented to screen
-        return np.dot(self.rot_matrix,pt.s)
+        # convert world-space 3d coordinates to camera coordinates
+        screen_pt = np.dot(self.rot_matrix,pt.s)
+
+        # rotate camera position to sit on the z axis
+        aligned_camera = np.dot(self.rot_matrix,self.camera_pos)
+
+        camera_oriented_pt = screen_pt - aligned_camera
+
+        return camera_oriented_pt
 
     def reverse_proj(self,x,y,z=0):
-        # convert 3d screen-oriented coordinates into world coordinates
-        s = np.array([x,y,z])
+        # convert 3d camera-oriented coordinates into world coordinates
+        s = np.array([x,y,z]) + self.camera_pos
+
         return np.dot( self.rev_rot_matrix, s )
 
-    def to_viewport(self,x,y):
+    def to_viewport(self,x,y,z):
+        if self.f is not None:
+            x = self.f/z * x
+            y = self.f/z * y
+
         # convert from screen-oriented 3d points to viewport coordinates
         return self.width/2 + x, self.height/2 - y
 
     def from_viewport(self,x,y):
+        if self.f is not None:
+            raise Exception("can't do this from a perspective viewport")
+
         # convert viewport coordinates to screen-oriented x and y coords
         return x - self.width/2, self.height/2 - y
 
@@ -105,6 +120,7 @@ class App:
         self.master = master
 
         self.front = Viewport(master, width=300, height=300, highlightbackground="black",highlightthickness=1)
+        self.front.set_camera_position( 0,0,0 )
         self.front.set_euler_angles( 0,0,0 )
         self.front.place(x=5,y=310)
 
@@ -118,6 +134,7 @@ class App:
 
         self.pers = Viewport(master, width=300, height=300, highlightbackground="black",highlightthickness=1,f=1.0)
         self.pers.set_euler_angles( 0,0,0 )
+        self.pers.set_camera_position(0, 0, -400)
         self.pers.place(x=310,y=5)
 
         self.front.bind("<B1-Motion>", self.on_move)
@@ -138,10 +155,18 @@ class App:
         self.pers.bind("<Button-1>", self.pers_click)
         self.pers.bind("<ButtonRelease-1>", self.pers_clickrelease)
         self.pers.bind("<B1-Motion>", self.pers_motion)
+        self.pers.bind_all("<+>", self.press_plus)
+        self.pers.bind_all("<minus>", self.press_minus)
 
         self.selected_id = None
 
         self.points = []
+
+        # sample cube
+        for x in [-50,50]:
+            for y in [-50,50]:
+                for z in [-50,50]:
+                    self.add_new_point( Point(x,y,z) )
 
     def pers_click(self,event):
         self.persdown = (event.x,event.y)
@@ -190,7 +215,8 @@ class App:
         self.update_point_position(pt)
 
     def on_click(self,event):
-        self.selected_id = event.widget.find_overlapping(event.x-2,event.y-2,event.x+2,event.y+2)[0]
+        ix = event.widget.find_overlapping(event.x-2,event.y-2,event.x+2,event.y+2)
+        self.selected_id = ix[0] if len(ix)>0 else None
 
     def on_shift_click(self,event):
         x,y = event.widget.from_viewport(event.x,event.y)
@@ -203,6 +229,14 @@ class App:
 
     def on_buttonrelease(self,event):
         self.selected_id = None
+
+    def press_plus(self,event):
+        self.pers.f *= 1.5
+        self.pers.update_all_points()
+
+    def press_minus(self,event):
+        self.pers.f *= 0.75
+        self.pers.update_all_points()
 
 master = Tk()
 master.resizable(width=False, height=False)
