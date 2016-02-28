@@ -36,10 +36,6 @@ class Viewport(Canvas):
         self.pts = {}
         Canvas.__init__(self,*args,**kwargs)
 
-    def set_dim_map(self,x,y):
-        self.x_dim = x
-        self.y_dim = y
-
     def set_euler_angles(self,theta_x,theta_y,theta_z):
         self.theta = np.array([theta_x,theta_y,theta_z])
 
@@ -65,9 +61,9 @@ class Viewport(Canvas):
         # convert world-space 3d coordinates to 3d point oriented to screen
         return np.dot(self.rot_matrix,pt.s)
 
-    def reverse_proj(self,x,y):
+    def reverse_proj(self,x,y,z=0):
         # convert 2d screen coordinates into 3d coordinate, with z coordinate set to zero
-        s = np.array([x,y,0])
+        s = np.array([x,y,z])
         return np.dot( self.rev_rot_matrix, s )
 
 class App:
@@ -75,17 +71,14 @@ class App:
         self.master = master
 
         self.front = Viewport(master, width=300, height=300, highlightbackground="black",highlightthickness=1)
-        self.front.set_dim_map(0,1) # x maps to the 0th dimension, y maps to the 1st dimension
         self.front.set_euler_angles( 0,0,0 )
         self.front.place(x=5,y=310)
 
         self.top = Viewport(master, width=300, height=300, highlightbackground="black",highlightthickness=1)
-        self.top.set_dim_map(0,2) # x maps to the 0th dimension, y maps to the 2nd dimension
         self.top.set_euler_angles( -np.pi/2,0,0 )
         self.top.place(x=5,y=5)
 
         self.right = Viewport(master, width=300, height=300, highlightbackground="black",highlightthickness=1)
-        self.right.set_dim_map(2,1) # x maps to the 2nd dimension, y maps to the 2nd dimension
         self.right.set_euler_angles( 0,np.pi/2,0 )
         self.right.place(x=310,y=310)
 
@@ -126,10 +119,9 @@ class App:
         for id in self.selected_ids:
             pt = event.widget.pts[id]
 
+            px,py,pz = event.widget.proj(pt) #we need the screen-oriented depth coord 'pz'
 
-
-            pt.s[ event.widget.x_dim ] = event.x
-            pt.s[ event.widget.y_dim ] = event.y
+            pt.s = event.widget.reverse_proj( event.x, event.y, pz )
 
             self.update_point_position(pt)
 
