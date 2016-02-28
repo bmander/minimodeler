@@ -122,7 +122,7 @@ class App:
         self.pers.bind("<ButtonRelease-1>", self.pers_clickrelease)
         self.pers.bind("<B1-Motion>", self.pers_motion)
 
-        self.selected_ids = []
+        self.selected_id = None
 
         self.points = []
 
@@ -159,19 +159,21 @@ class App:
         pt.ids[self.pers] = persid
 
     def on_move(self, event):
-        for id in self.selected_ids:
-            pt = event.widget.pts[id]
+        if self.selected_id is None:
+            return
 
-            px,py,pz = event.widget.proj(pt) #we need the screen-oriented depth coord 'pz'
+        pt = event.widget.pts[self.selected_id]
 
-            x,y = event.widget.to_cartesian(event.x,event.y)
+        px,py,pz = event.widget.proj(pt) #we need the screen-oriented depth coord 'pz'
 
-            pt.s = event.widget.reverse_proj( x, y, pz )
+        x,y = event.widget.to_cartesian(event.x,event.y)
 
-            self.update_point_position(pt)
+        pt.s = event.widget.reverse_proj( x, y, pz )
+
+        self.update_point_position(pt)
 
     def on_click(self,event):
-        self.selected_ids = event.widget.find_overlapping(event.x-2,event.y-2,event.x+2,event.y+2)
+        self.selected_id = event.widget.find_overlapping(event.x-2,event.y-2,event.x+2,event.y+2)[0]
 
     def on_shift_click(self,event):
         x,y = event.widget.to_cartesian(event.x,event.y)
@@ -183,7 +185,7 @@ class App:
         self.add_new_point(pt)
 
     def on_buttonrelease(self,event):
-        self.selected_points = []
+        self.selected_id = None
 
 master = Tk()
 master.resizable(width=False, height=False)
