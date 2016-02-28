@@ -84,11 +84,11 @@ class Viewport(Canvas):
 
     def to_viewport(self,x,y):
         # convert from screen-oriented 3d points to viewport coordinates
-        return x, self.height-y;
+        return self.width/2 + x, self.height/2 - y
 
     def from_viewport(self,x,y):
         # convert viewport coordinates to screen-oriented x and y coords
-        return x, self.height-y;
+        return x - self.width/2, self.height/2 - y
 
 class App:
     def __init__(self,master):
@@ -185,8 +185,6 @@ class App:
     def on_shift_click(self,event):
         x,y = event.widget.from_viewport(event.x,event.y)
         pt = event.widget.reverse_proj(x,y)
-
-        print pt
 
         pt = Point(*pt)
         self.points.append( pt )
