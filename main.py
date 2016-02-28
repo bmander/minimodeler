@@ -46,11 +46,13 @@ class Viewport(Canvas):
         pt = self.pts[id]
         x,y,z = self.proj(pt)
 
+        x,y = self.to_cartesian(x,y)
         self.coords( id, x-2.5, y-2.5, x+2.5, y+2.5 )
 
     def add_point(self,pt):
         x,y,z = self.proj(pt)
 
+        x,y = self.to_cartesian(x,y)
         id = self.create_rectangle( x-2.5, y-2.5, x+2.5, y+2.5 )
 
         self.pts[id] = pt
@@ -65,6 +67,9 @@ class Viewport(Canvas):
         # convert 2d screen coordinates into 3d coordinate, with z coordinate set to zero
         s = np.array([x,y,z])
         return np.dot( self.rev_rot_matrix, s )
+
+    def to_cartesian(self,x,y):
+        return x, self.winfo_reqheight()-y;
 
 class App:
     def __init__(self,master):
@@ -121,7 +126,9 @@ class App:
 
             px,py,pz = event.widget.proj(pt) #we need the screen-oriented depth coord 'pz'
 
-            pt.s = event.widget.reverse_proj( event.x, event.y, pz )
+            x,y = event.widget.to_cartesian(event.x,event.y)
+
+            pt.s = event.widget.reverse_proj( x, y, pz )
 
             self.update_point_position(pt)
 
@@ -129,7 +136,8 @@ class App:
         self.selected_ids = event.widget.find_overlapping(event.x-2,event.y-2,event.x+2,event.y+2)
 
     def on_shift_click(self,event):
-        pt = event.widget.reverse_proj(event.x,event.y)
+        x,y = event.widget.to_cartesian(event.x,event.y)
+        pt = event.widget.reverse_proj(x,y)
 
         pt = Point(*pt)
         self.points.append( pt )
