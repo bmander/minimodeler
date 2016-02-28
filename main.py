@@ -37,10 +37,18 @@ class Viewport(Canvas):
         Canvas.__init__(self,*args,**kwargs)
 
     def set_euler_angles(self,theta_x,theta_y,theta_z):
-        self.theta = np.array([theta_x,theta_y,theta_z])
+        self.theta = np.array([theta_x,theta_y,theta_z], dtype=np.float32)
 
-        self.rot_matrix = make_rotation_matrix(theta_x,theta_y,theta_z)
-        self.rev_rot_matrix = make_rotation_matrix(-theta_x,-theta_y,-theta_z)
+        self._update_rot_matrices()
+
+    def rotate(self,theta_x,theta_y,theta_z):
+        self.theta += [theta_x,theta_y,theta_z]
+
+        self._update_rot_matrices()
+
+    def _update_rot_matrices(self):
+        self.rot_matrix = make_rotation_matrix(*self.theta)
+        self.rev_rot_matrix = make_rotation_matrix(*(-self.theta))
 
     def update_point(self,id):
         pt = self.pts[id]
@@ -48,6 +56,10 @@ class Viewport(Canvas):
 
         x,y = self.to_cartesian(x,y)
         self.coords( id, x-2.5, y-2.5, x+2.5, y+2.5 )
+
+    def update_all_points(self):
+        for id in self.pts:
+            self.update_point(id)
 
     def add_point(self,pt):
         x,y,z = self.proj(pt)
@@ -87,6 +99,10 @@ class App:
         self.right.set_euler_angles( 0,np.pi/2,0 )
         self.right.place(x=310,y=310)
 
+        self.pers = Viewport(master, width=300, height=300, highlightbackground="black",highlightthickness=1)
+        self.pers.set_euler_angles( 0,0,0 )
+        self.pers.place(x=310,y=5)
+
         self.front.bind("<B1-Motion>", self.on_move)
         self.front.bind("<Shift-Button-1>", self.on_shift_click)
         self.front.bind("<Button-1>", self.on_click)
@@ -102,23 +118,45 @@ class App:
         self.right.bind("<Button-1>", self.on_click)
         self.right.bind("<ButtonRelease-1>", self.on_buttonrelease)
 
+        self.pers.bind("<Button-1>", self.pers_click)
+        self.pers.bind("<ButtonRelease-1>", self.pers_clickrelease)
+        self.pers.bind("<B1-Motion>", self.pers_motion)
+
         self.selected_ids = []
 
         self.points = []
+
+    def pers_click(self,event):
+        self.persdown = (event.x,event.y)
+
+    def pers_clickrelease(self,event):
+        self.persdown = None
+
+    def pers_motion(self,event):
+        beta = 0.01*(event.x - self.persdown[0])
+        alpha = 0.01*(event.y - self.persdown[1])
+
+        self.pers.rotate(alpha,beta,0)
+        self.pers.update_all_points()
+
+        self.persdown = (event.x,event.y)
 
     def update_point_position(self,pt):
         self.front.update_point( pt.ids[self.front] )
         self.top.update_point( pt.ids[self.top] )
         self.right.update_point( pt.ids[self.right] )
+        self.pers.update_point( pt.ids[self.pers] )
 
     def add_new_point(self,pt):
         frontid = self.front.add_point(pt)
         topid = self.top.add_point(pt)
         rightid = self.right.add_point(pt)
+        persid = self.pers.add_point(pt)
 
         pt.ids[self.front] = frontid
         pt.ids[self.top] = topid
         pt.ids[self.right] = rightid
+        pt.ids[self.pers] = persid
 
     def on_move(self, event):
         for id in self.selected_ids:
