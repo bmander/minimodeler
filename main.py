@@ -41,7 +41,7 @@ class Viewport(Canvas):
         if 'f' in kwargs:
             del kwargs['f']
 
-        self.camera_pos = np.array([0,0,0])
+        self.set_camera_position(0,0,0)
 
         Canvas.__init__(self,*args,**kwargs)
 
@@ -51,12 +51,19 @@ class Viewport(Canvas):
         self._update_rot_matrices()
 
     def set_camera_position(self,x,y,z):
-        self.camera_pos = np.array([x,y,z])
+        self.camera_pos = np.array([x,y,z], dtype=np.float32)
 
     def rotate(self,theta_x,theta_y,theta_z):
         self.theta += [theta_x,theta_y,theta_z]
 
         self._update_rot_matrices()
+
+    def pan(self,x,y,z,relative=False):
+        s = np.array([x,y,z], dtype=np.float32)
+        if relative:
+            s = np.dot( self.rev_rot_matrix, s )
+
+        self.camera_pos += s
 
     def _update_rot_matrices(self):
         self.rot_matrix = make_rotation_matrix(*self.theta)
@@ -132,9 +139,9 @@ class App:
         self.right.set_euler_angles( 0,np.pi/2,0 )
         self.right.place(x=310,y=310)
 
-        self.pers = Viewport(master, width=300, height=300, highlightbackground="black",highlightthickness=1,f=1.0)
+        self.pers = Viewport(master, width=300, height=300, highlightbackground="black",highlightthickness=1,f=400.0)
         self.pers.set_euler_angles( 0,0,0 )
-        self.pers.set_camera_position(0, 0, -400)
+        self.pers.set_camera_position(0, 0, -100.0)
         self.pers.place(x=310,y=5)
 
         self.front.bind("<B1-Motion>", self.on_move)
@@ -157,15 +164,19 @@ class App:
         self.pers.bind("<B1-Motion>", self.pers_motion)
         self.pers.bind_all("<+>", self.press_plus)
         self.pers.bind_all("<minus>", self.press_minus)
+        self.pers.bind_all("<Left>", self.press_left)
+        self.pers.bind_all("<Right>", self.press_right)
+        self.pers.bind_all("<Up>", self.press_up)
+        self.pers.bind_all("<Down>", self.press_down)
 
         self.selected_id = None
 
         self.points = []
 
         # sample cube
-        for x in [-50,50]:
-            for y in [-50,50]:
-                for z in [-50,50]:
+        for x in [-10,10]:
+            for y in [-10,10]:
+                for z in [-10,10]:
                     self.add_new_point( Point(x,y,z) )
 
     def pers_click(self,event):
@@ -236,6 +247,22 @@ class App:
 
     def press_minus(self,event):
         self.pers.f *= 0.75
+        self.pers.update_all_points()
+
+    def press_left(self,event):
+        self.pers.pan(-5,0,0, relative=False)
+        self.pers.update_all_points()
+
+    def press_right(self,event):
+        self.pers.pan(5,0,0, relative=False)
+        self.pers.update_all_points()
+
+    def press_up(self,event):
+        self.pers.pan(0,5,0, relative=False)
+        self.pers.update_all_points()
+
+    def press_down(self,event):
+        self.pers.pan(0,-5,0, relative=False)
         self.pers.update_all_points()
 
 master = Tk()
