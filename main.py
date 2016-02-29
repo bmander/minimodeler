@@ -2,8 +2,9 @@ from Tkinter import *
 import numpy as np
 
 class Point:
-    def __init__(self,x,y,z):
+    def __init__(self,x,y,z,color="black"):
         self.s = [x,y,z]
+        self.color = color
         self.ids = {}
 
     @property
@@ -17,6 +18,9 @@ class Point:
     @property
     def z(self):
         return self.s[2]
+
+class Camera(Point):
+    pass
 
 def make_rotation_matrix(theta_x,theta_y,theta_z):
     A_x = np.array([[1,0,0],
@@ -73,7 +77,10 @@ class Viewport(Canvas):
         pt = self.pts[id]
         x,y,z = self.proj(pt)
 
-        x,y = self.to_viewport(x,y,z)
+        coord = self.to_viewport(x,y,z)
+        if coord is None:
+            return
+        x,y = coord
         self.coords( id, x-2.5, y-2.5, x+2.5, y+2.5 )
 
     def update_all_points(self):
@@ -83,8 +90,11 @@ class Viewport(Canvas):
     def add_point(self,pt):
         x,y,z = self.proj(pt)
 
-        x,y = self.to_viewport(x,y,z)
-        id = self.create_rectangle( x-2.5, y-2.5, x+2.5, y+2.5 )
+        coord = self.to_viewport(x,y,z)
+        if coord is None:
+            return
+        x,y = coord
+        id = self.create_rectangle( x-2.5, y-2.5, x+2.5, y+2.5, outline=pt.color )
 
         self.pts[id] = pt
 
@@ -109,6 +119,9 @@ class Viewport(Canvas):
 
     def to_viewport(self,x,y,z):
         if self.f is not None:
+            if z<0:
+                return None #point behind camera
+
             x = self.f/z * x
             y = self.f/z * y
 
@@ -178,6 +191,10 @@ class App:
             for y in [-10,10]:
                 for z in [-10,10]:
                     self.add_new_point( Point(x,y,z) )
+
+        # camera points
+        self.add_new_point( Camera(0,0,-100, color="red") )
+
 
     def pers_click(self,event):
         self.persdown = (event.x,event.y)
