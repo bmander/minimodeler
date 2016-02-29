@@ -5,7 +5,10 @@ class Point:
     def __init__(self,x,y,z,color="black"):
         self.s = [x,y,z]
         self.color = color
-        self.ids = {}
+        self.viewports = {} # viewport -> id
+
+    def add_viewport(self,viewport):
+        self.viewports[viewport] = None
 
     @property
     def x(self):
@@ -18,6 +21,22 @@ class Point:
     @property
     def z(self):
         return self.s[2]
+
+    def add_to_viewport(self, viewport):
+        if self.viewports.get(viewport) is not None:
+            raise Exception( "this point has already been added to this viewport" )
+
+        px,py,pz = viewport.proj(*self.s) #point oriented to viewport
+        pt = viewport.to_viewport(px,py,pz) #get canvas coordinates
+        if pt is None:
+            self.viewports[viewport] = None
+            return
+
+        cx,cy = pt
+        id = viewport.create_rectangle( cx-2.5, cy-2.5, cx+2.5, cy+2.5, outline=self.color )
+        self.viewports[viewport] = id
+
+        viewport.pts[id] = self
 
 class Camera(Point):
     pass
@@ -75,7 +94,7 @@ class Viewport(Canvas):
 
     def update_point(self,id):
         pt = self.pts[id]
-        x,y,z = self.proj(pt)
+        x,y,z = self.proj(*pt.s)
 
         coord = self.to_viewport(x,y,z)
         if coord is None:
@@ -87,22 +106,22 @@ class Viewport(Canvas):
         for id in self.pts:
             self.update_point(id)
 
-    def add_point(self,pt):
-        x,y,z = self.proj(pt)
+    # def add_point(self,pt):
+    #     x,y,z = self.proj(pt)
+    #
+    #     coord = self.to_viewport(x,y,z)
+    #     if coord is None:
+    #         return
+    #     x,y = coord
+    #     id = self.create_rectangle( x-2.5, y-2.5, x+2.5, y+2.5, outline=pt.color )
+    #
+    #     self.pts[id] = pt
+    #
+    #     return id
 
-        coord = self.to_viewport(x,y,z)
-        if coord is None:
-            return
-        x,y = coord
-        id = self.create_rectangle( x-2.5, y-2.5, x+2.5, y+2.5, outline=pt.color )
-
-        self.pts[id] = pt
-
-        return id
-
-    def proj(self,pt):
+    def proj(self,x,y,z):
         # convert world-space 3d coordinates to camera coordinates
-        screen_pt = np.dot(self.rot_matrix,pt.s)
+        screen_pt = np.dot(self.rot_matrix,[x,y,z])
 
         # rotate camera position to sit on the z axis
         aligned_camera = np.dot(self.rot_matrix,self.camera_pos)
@@ -212,21 +231,16 @@ class App:
         self.persdown = (event.x,event.y)
 
     def update_point_position(self,pt):
-        self.front.update_point( pt.ids[self.front] )
-        self.top.update_point( pt.ids[self.top] )
-        self.right.update_point( pt.ids[self.right] )
-        self.pers.update_point( pt.ids[self.pers] )
+        self.front.update_point( pt.viewports[self.front] )
+        self.top.update_point( pt.viewports[self.top] )
+        self.right.update_point( pt.viewports[self.right] )
+        self.pers.update_point( pt.viewports[self.pers] )
 
     def add_new_point(self,pt):
-        frontid = self.front.add_point(pt)
-        topid = self.top.add_point(pt)
-        rightid = self.right.add_point(pt)
-        persid = self.pers.add_point(pt)
-
-        pt.ids[self.front] = frontid
-        pt.ids[self.top] = topid
-        pt.ids[self.right] = rightid
-        pt.ids[self.pers] = persid
+        pt.add_to_viewport( self.front )
+        pt.add_to_viewport( self.top )
+        pt.add_to_viewport( self.right )
+        pt.add_to_viewport( self.pers )
 
     def on_move(self, event):
         if self.selected_id is None:
@@ -238,7 +252,7 @@ class App:
             self.pers.set_camera_position(pt.x, pt.y, pt.z)
             self.pers.update_all_points()
 
-        px,py,pz = event.widget.proj(pt) #we need the screen-oriented depth coord 'pz'
+        px,py,pz = event.widget.proj(*pt.s) #we need the screen-oriented depth coord 'pz'
 
         x,y = event.widget.from_viewport(event.x,event.y)
 
