@@ -38,8 +38,23 @@ class Point:
 
         viewport.pts[id] = self
 
+    def update(self,viewport):
+        x,y,z = viewport.proj(*self.s)
+
+        id = self.viewports[viewport]
+        coord = viewport.to_viewport(x,y,z)
+        if coord is None:
+            return
+        x,y = coord
+        viewport.coords( id, x-2.5, y-2.5, x+2.5, y+2.5 )
+
+    def update_all(self):
+        for viewport in self.viewports:
+            self.update(viewport)
+
 class Camera(Point):
-    pass
+    def set_pers( self, pers ):
+        self.pers = pers
 
 def make_rotation_matrix(theta_x,theta_y,theta_z):
     A_x = np.array([[1,0,0],
@@ -91,33 +106,6 @@ class Viewport(Canvas):
     def _update_rot_matrices(self):
         self.rot_matrix = make_rotation_matrix(*self.theta)
         self.rev_rot_matrix = make_rotation_matrix(*(-self.theta))
-
-    def update_point(self,id):
-        pt = self.pts[id]
-        x,y,z = self.proj(*pt.s)
-
-        coord = self.to_viewport(x,y,z)
-        if coord is None:
-            return
-        x,y = coord
-        self.coords( id, x-2.5, y-2.5, x+2.5, y+2.5 )
-
-    def update_all_points(self):
-        for id in self.pts:
-            self.update_point(id)
-
-    # def add_point(self,pt):
-    #     x,y,z = self.proj(pt)
-    #
-    #     coord = self.to_viewport(x,y,z)
-    #     if coord is None:
-    #         return
-    #     x,y = coord
-    #     id = self.create_rectangle( x-2.5, y-2.5, x+2.5, y+2.5, outline=pt.color )
-    #
-    #     self.pts[id] = pt
-    #
-    #     return id
 
     def proj(self,x,y,z):
         # convert world-space 3d coordinates to camera coordinates
@@ -226,21 +214,21 @@ class App:
         alpha = 0.01*(event.y - self.persdown[1])
 
         self.pers.rotate(alpha,beta,0)
-        self.pers.update_all_points()
+        self.update_all_points(self.pers)
 
         self.persdown = (event.x,event.y)
-
-    def update_point_position(self,pt):
-        self.front.update_point( pt.viewports[self.front] )
-        self.top.update_point( pt.viewports[self.top] )
-        self.right.update_point( pt.viewports[self.right] )
-        self.pers.update_point( pt.viewports[self.pers] )
 
     def add_new_point(self,pt):
         pt.add_to_viewport( self.front )
         pt.add_to_viewport( self.top )
         pt.add_to_viewport( self.right )
         pt.add_to_viewport( self.pers )
+
+        self.points.append( pt )
+
+    def update_all_points(self,viewport):
+        for pt in self.points:
+            pt.update( viewport )
 
     def on_move(self, event):
         if self.selected_id is None:
@@ -250,15 +238,14 @@ class App:
 
         if isinstance(pt,Camera):
             self.pers.set_camera_position(pt.x, pt.y, pt.z)
-            self.pers.update_all_points()
+            self.update_all_points(self.pers)
 
         px,py,pz = event.widget.proj(*pt.s) #we need the screen-oriented depth coord 'pz'
 
         x,y = event.widget.from_viewport(event.x,event.y)
 
         pt.s = event.widget.reverse_proj( x, y, pz )
-
-        self.update_point_position(pt)
+        pt.update_all()
 
     def on_click(self,event):
         ix = event.widget.find_overlapping(event.x-2,event.y-2,event.x+2,event.y+2)
@@ -269,8 +256,6 @@ class App:
         pt = event.widget.reverse_proj(x,y)
 
         pt = Point(*pt)
-        self.points.append( pt )
-
         self.add_new_point(pt)
 
     def on_buttonrelease(self,event):
@@ -278,27 +263,27 @@ class App:
 
     def press_plus(self,event):
         self.pers.f *= 1.5
-        self.pers.update_all_points()
+        self.update_all_points(self.pers)
 
     def press_minus(self,event):
         self.pers.f *= 0.75
-        self.pers.update_all_points()
+        self.update_all_points(self.pers)
 
     def press_left(self,event):
         self.pers.pan(-5,0,0, relative=False)
-        self.pers.update_all_points()
+        self.update_all_points(self.pers)
 
     def press_right(self,event):
         self.pers.pan(5,0,0, relative=False)
-        self.pers.update_all_points()
+        self.update_all_points(self.pers)
 
     def press_up(self,event):
         self.pers.pan(0,5,0, relative=False)
-        self.pers.update_all_points()
+        self.update_all_points(self.pers)
 
     def press_down(self,event):
         self.pers.pan(0,-5,0, relative=False)
-        self.pers.update_all_points()
+        self.update_all_points(self.pers)
 
 master = Tk()
 master.resizable(width=False, height=False)
