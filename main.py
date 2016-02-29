@@ -234,6 +234,10 @@ class App:
 
         pt = event.widget.pts[self.selected_id]
 
+        if isinstance(pt,Camera):
+            self.pers.set_camera_position(pt.x, pt.y, pt.z)
+            self.pers.update_all_points()
+
         px,py,pz = event.widget.proj(pt) #we need the screen-oriented depth coord 'pz'
 
         x,y = event.widget.from_viewport(event.x,event.y)
