@@ -274,6 +274,7 @@ class App:
         self.pers.bind_all("<Right>", self.press_right)
         self.pers.bind_all("<Up>", self.press_up)
         self.pers.bind_all("<Down>", self.press_down)
+        self.pers.bind_all("<f>", self.press_f)
 
         self.selected_id = None
 
@@ -373,6 +374,14 @@ class App:
 
     def press_down(self,event):
         self.pers.pan(0,-5,0, relative=False)
+        self.update_all_points(self.pers)
+
+    def press_f(self,event):
+        if self.pers.f is not None:
+            self.pers.f = None
+        else:
+            self.pers.f = 400.0
+
         self.update_all_points(self.pers)
 
 master = Tk()
