@@ -5,6 +5,9 @@ rotation matrices and perspective projection. Minimodeler implements
 a three orthogonal views and a rotatable perspective view from first
 principles without libraries.
 
+To run:
+$ python main.py
+
 It has four views -
 Top left: top
 Bottom left: front
