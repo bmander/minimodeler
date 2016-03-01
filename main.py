@@ -166,7 +166,7 @@ class Viewport(Canvas):
 
         Canvas.__init__(self,*args,**kwargs)
 
-    def set_euler_angles(self,theta_x,theta_y,theta_z):
+    def set_orientation(self,theta_x,theta_y,theta_z):
         self.theta = np.array([theta_x,theta_y,theta_z], dtype=np.float32)
 
         self._update_rot_matrices()
@@ -178,13 +178,6 @@ class Viewport(Canvas):
         self.theta += [theta_x,theta_y,theta_z]
 
         self._update_rot_matrices()
-
-    def pan(self,x,y,z,relative=False):
-        s = np.array([x,y,z], dtype=np.float32)
-        if relative:
-            s = np.dot( self.rev_rot_matrix, s )
-
-        self.camera_pos += s
 
     def _update_rot_matrices(self):
         self.rot_matrix = make_rotation_matrix(*self.theta)
@@ -229,19 +222,19 @@ class App:
 
         self.front = Viewport(master, width=300, height=300, highlightbackground="black",highlightthickness=1)
         self.front.set_camera_position( 0,0,0 )
-        self.front.set_euler_angles( 0,0,0 )
+        self.front.set_orientation( 0,0,0 )
         self.front.place(x=5,y=310)
 
         self.top = Viewport(master, width=300, height=300, highlightbackground="black",highlightthickness=1)
-        self.top.set_euler_angles( -np.pi/2,0,0 )
+        self.top.set_orientation( -np.pi/2,0,0 )
         self.top.place(x=5,y=5)
 
         self.right = Viewport(master, width=300, height=300, highlightbackground="black",highlightthickness=1)
-        self.right.set_euler_angles( 0,np.pi/2,0 )
+        self.right.set_orientation( 0,np.pi/2,0 )
         self.right.place(x=310,y=310)
 
         self.pers = Viewport(master, width=300, height=300, highlightbackground="black",highlightthickness=1,f=400.0)
-        self.pers.set_euler_angles( 0,0,0 )
+        self.pers.set_orientation( 0,0,0 )
         self.pers.set_camera_position(0, 0, -100.0)
         self.pers.place(x=310,y=5)
 
