@@ -26,23 +26,21 @@ class Point:
         if self.viewports.get(viewport) is not None:
             raise Exception( "this point has already been added to this viewport" )
 
-        px,py,pz = viewport.proj(*self.s) #point oriented to viewport
-        pt = viewport.to_viewport(px,py,pz) #get canvas coordinates
-        if pt is None:
+        coord = viewport.world_to_viewport(*self.s)
+        if coord is None:
             self.viewports[viewport] = None
             return
 
-        cx,cy = pt
+        cx,cy = coord
         id = viewport.create_rectangle( cx-2.5, cy-2.5, cx+2.5, cy+2.5, outline=self.color )
-        self.viewports[viewport] = id
 
+        self.viewports[viewport] = id
         viewport.pts[id] = self
 
     def update(self,viewport):
-        x,y,z = viewport.proj(*self.s)
-
         id = self.viewports[viewport]
-        coord = viewport.to_viewport(x,y,z)
+
+        coord = viewport.world_to_viewport(*self.s)
         if coord is None:
             return
         x,y = coord
@@ -53,8 +51,93 @@ class Point:
             self.update(viewport)
 
 class Camera(Point):
-    def set_pers( self, pers ):
+    def __init__( self, x,y,z, alpha, beta, gamma, pers ):
+        Point.__init__(self,x,y,z,color="red")
+        self.theta = np.array([alpha,beta,gamma],dtype=np.float32)
+        self.xaxis = {}
+        self.yaxis = {}
+        self.zaxis = {}
+
+        self.rot_matrix = make_rotation_matrix(*-self.theta)
+
         self.pers = pers
+
+    def rotate( self, alpha, beta, gamma):
+        self.theta += np.array([alpha,beta,gamma],dtype=np.float32)
+        self.rot_matrix = make_rotation_matrix(*-self.theta)
+
+
+    def add_to_viewport(self, viewport):
+        if viewport == self.pers:
+            return
+
+        if self.viewports.get(viewport) is not None:
+            raise Exception( "this point has already been added to this viewport" )
+
+        coord = viewport.world_to_viewport(*self.s)
+        if coord is None:
+            self.viewports[viewport] = None
+            return
+
+        cx,cy = coord
+        id = viewport.create_rectangle( cx-2.5, cy-2.5, cx+2.5, cy+2.5, outline=self.color )
+
+        axis = np.dot(self.rot_matrix, np.array([20,0,0]))
+        top = self.s+axis
+        coord = viewport.world_to_viewport(*top)
+        if coord:
+            axisx,axisy = coord
+            self.xaxis[viewport] = viewport.create_line(cx,cy,axisx,axisy, fill="red")
+
+        axis = np.dot(self.rot_matrix, np.array([0,20,0]))
+        top = self.s+axis
+        coord = viewport.world_to_viewport(*top)
+        if coord:
+            axisx,axisy = coord
+            self.yaxis[viewport] = viewport.create_line(cx,cy,axisx,axisy, fill="green")
+
+        axis = np.dot(self.rot_matrix, np.array([0,0,20]))
+        top = self.s+axis
+        coord = viewport.world_to_viewport(*top)
+        if coord:
+            axisx,axisy = coord
+            self.zaxis[viewport] = viewport.create_line(cx,cy,axisx,axisy, fill="blue")
+
+        self.viewports[viewport] = id
+        viewport.pts[id] = self
+
+    def update(self,viewport):
+        if viewport == self.pers:
+            return
+
+        id = self.viewports[viewport]
+
+        coord = viewport.world_to_viewport(*self.s)
+        if coord is None:
+            return
+        x,y = coord
+        viewport.coords( id, x-2.5, y-2.5, x+2.5, y+2.5 )
+
+        axis = np.dot(self.rot_matrix, np.array([20,0,0]))
+        top = self.s+axis
+        coord = viewport.world_to_viewport(*top)
+        if coord:
+            cx,cy = coord
+            viewport.coords( self.xaxis[viewport], x,y, cx, cy )
+
+        axis = np.dot(self.rot_matrix, np.array([0,20,0]))
+        top = self.s+axis
+        coord = viewport.world_to_viewport(*top)
+        if coord:
+            cx,cy = coord
+            viewport.coords( self.yaxis[viewport], x,y, cx, cy )
+
+        axis = np.dot(self.rot_matrix, np.array([0,0,20]))
+        top = self.s+axis
+        coord = viewport.world_to_viewport(*top)
+        if coord:
+            cx,cy = coord
+            viewport.coords( self.zaxis[viewport], x,y, cx, cy )
 
 def make_rotation_matrix(theta_x,theta_y,theta_z):
     A_x = np.array([[1,0,0],
@@ -123,6 +206,9 @@ class Viewport(Canvas):
         s = np.array([x,y,z]) + self.camera_pos
 
         return np.dot( self.rev_rot_matrix, s )
+
+    def world_to_viewport(self,x,y,z):
+        return self.to_viewport( *self.proj(x,y,z) )
 
     def to_viewport(self,x,y,z):
         if self.f is not None:
@@ -200,7 +286,8 @@ class App:
                     self.add_new_point( Point(x,y,z) )
 
         # camera points
-        self.add_new_point( Camera(0,0,-100, color="red") )
+        self.camera = Camera(0,0,-100, 0,0,0, self.pers)
+        self.add_new_point( self.camera )
 
 
     def pers_click(self,event):
@@ -215,6 +302,9 @@ class App:
 
         self.pers.rotate(alpha,beta,0)
         self.update_all_points(self.pers)
+
+        self.camera.rotate(alpha,beta,0)
+        self.camera.update_all()
 
         self.persdown = (event.x,event.y)
 
