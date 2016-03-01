@@ -192,14 +192,9 @@ class Viewport(Canvas):
 
     def proj(self,x,y,z):
         # convert world-space 3d coordinates to camera coordinates
-        screen_pt = np.dot(self.rot_matrix,[x,y,z])
+        screen_pt = np.dot(self.rot_matrix,[x,y,z]-self.camera_pos)
 
-        # rotate camera position to sit on the z axis
-        aligned_camera = np.dot(self.rot_matrix,self.camera_pos)
-
-        camera_oriented_pt = screen_pt - aligned_camera
-
-        return camera_oriented_pt
+        return screen_pt
 
     def reverse_proj(self,x,y,z=0):
         # convert 3d camera-oriented coordinates into world coordinates
