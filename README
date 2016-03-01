@@ -1,0 +1,22 @@
+minimodeler
+
+The modeler that's not good at anything except teaching me about
+rotation matrices and perspective projection. Minimodeler implements
+a three orthogonal views and a rotatable perspective view from first
+principles without libraries.
+
+It has four views -
+Top left: top
+Bottom left: front
+Bottom right: right
+Top right: rotatable
+
+Shift-click to add points.
+Click and drag to move points.
+Click and drag red point to move camera.
+Click and drag upper-right view reorients the camera.
+
+Some keys do stuff -
+'f': toggle perspective in rotatable view
+'+': increase focal length
+'-': decrease focal length
