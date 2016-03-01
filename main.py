@@ -385,6 +385,7 @@ class App:
         self.update_all_points(self.pers)
 
 master = Tk()
+master.wm_title("minimodeler")
 master.resizable(width=False, height=False)
 master.geometry('{}x{}'.format(620, 620))
 app = App(master)
