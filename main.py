@@ -270,10 +270,6 @@ class App:
         self.pers.bind("<B1-Motion>", self.pers_motion)
         self.pers.bind_all("<+>", self.press_plus)
         self.pers.bind_all("<minus>", self.press_minus)
-        self.pers.bind_all("<Left>", self.press_left)
-        self.pers.bind_all("<Right>", self.press_right)
-        self.pers.bind_all("<Up>", self.press_up)
-        self.pers.bind_all("<Down>", self.press_down)
         self.pers.bind_all("<f>", self.press_f)
 
         self.selected_id = None
@@ -358,22 +354,6 @@ class App:
 
     def press_minus(self,event):
         self.pers.f *= 0.75
-        self.update_all_points(self.pers)
-
-    def press_left(self,event):
-        self.pers.pan(-5,0,0, relative=False)
-        self.update_all_points(self.pers)
-
-    def press_right(self,event):
-        self.pers.pan(5,0,0, relative=False)
-        self.update_all_points(self.pers)
-
-    def press_up(self,event):
-        self.pers.pan(0,5,0, relative=False)
-        self.update_all_points(self.pers)
-
-    def press_down(self,event):
-        self.pers.pan(0,-5,0, relative=False)
         self.update_all_points(self.pers)
 
     def press_f(self,event):
